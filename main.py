@@ -36,6 +36,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 torch.use_deterministic_algorithms(True)
 
+# TODO paramsの意味を理解する
 TRAINING_PARAMS = dict(
     horizon = 8,
     num_envs = 512,
@@ -343,6 +344,8 @@ def train(env, model, ckpt_dir, training_params):
             tic = time.time()
 
 if __name__ == "__main__":
+    
+    # configの処理 .pyかそれ以外か
     if os.path.splitext(settings.config)[-1] in [".pkl", ".json", ".yaml"]:
         config = object()
         config.env_params = dict(
@@ -353,12 +356,18 @@ if __name__ == "__main__":
         config = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(config)
 
+    # configがtraing_paramsの属性を持っていたら更新
     if hasattr(config, "training_params"):
         TRAINING_PARAMS.update(config.training_params)
+
+    # TODO save_intervalとは？
     if not TRAINING_PARAMS["save_interval"]:
         TRAINING_PARAMS["save_interval"] = TRAINING_PARAMS["max_epochs"]
     print(TRAINING_PARAMS)
+
+    # TODO どういうこと？
     training_params = namedtuple('x', TRAINING_PARAMS.keys())(*TRAINING_PARAMS.values())
+
     if hasattr(config, "discriminators"):
         discriminators = {
             name: env.DiscriminatorConfig(**prop)
@@ -366,6 +375,7 @@ if __name__ == "__main__":
         }
     else:
         discriminators = {"_/full": env.DiscriminatorConfig()}
+
     if hasattr(config, "env_cls"):
         env_cls = getattr(env, config.env_cls)
     else:
@@ -390,6 +400,7 @@ if __name__ == "__main__":
         compute_device=settings.device, 
         **config.env_params
     )
+
     if settings.test:
         env.episode_length = 500000
 
